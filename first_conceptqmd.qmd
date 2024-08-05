@@ -1,0 +1,74 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{julia}
+
+using Images
+using Flux
+```
+
+```{julia}
+
+function read_photo(path, ratio = 1)
+    photo = imresize(load(path),ratio=ratio)
+    photo = Gray.(photo)
+    array = convert(Array{Float64},photo) 
+    return array
+end
+
+photo = read_photo("Nordea.jpg", 0.01)
+
+
+```
+
+
+# edge detections
+
+```{julia}
+
+vert_filter = [[1,1,1] [0,0,0] [-1,-1,-1]]
+input = [[3,3,3,3,3,3] [3,3,3,3,3,3] [3,3,3,3,3,3] [1,1,1,1,1,1] [1,1,1,1,1,1] [1,1,1,1,1,1]]
+
+Flux.conv(photo, vert_filter)
+```
+
+# Encoding to ASCII
+
+```{julia}
+
+levels = " .:-=+*?#%@"
+
+function map_to_char(value, levels)
+    index = clamp(value, 1, length(levels)) 
+    return levels[index]*levels[index]
+end
+
+function rescale_photo(photo_array, n_level::Integer)
+    photo_array = photo_array*(-n_level)
+    photo_array = photo_array .+ (n_level+1)
+    return Int8.(floor.(photo_array))
+end
+
+function encode_photo(photo_array, write_path::String ="output.txt", encode_levels::String = " .:-=+*?#%@")
+    photo_array = rescale_photo(photo_array, length(encode_levels))
+    photo_array = map(x -> map_to_char(x, encode_levels), photo_array)
+
+    output_string = join(map(join, eachrow(photo_array)), '\n')
+
+    print(output_string)
+
+    open(write_path, "w") do file
+        write(file, output_string)
+    end
+
+    println("Output ready!")
+    print(encode_levels)
+
+end
+
+```
+```{julia}
+encode_photo(photo, "output.txt"," .:#@")
+```
