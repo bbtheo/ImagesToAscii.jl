@@ -4,21 +4,34 @@ format: html
 ---
 
 ```{julia}
-
 using Images
-using Flux
+using ImageToAscii
 ```
 
 ```{julia}
 
+using TestImages, ImageContrastAdjustment
+photo = imresize(load("pics/helsinki.jpg"),ratio=0.12)
+photo = Gray.(photo)
+alg = ContrastStretching(t = 0.4, slope = 5)
+img_adjusted = adjust_histogram(photo, alg)
+```
+
+```{julia}
+photo = convert(Array{Float64},img_adjusted) 
+```
+```{julia}
+img
+```
+```{julia}
+
 function read_photo(path, ratio = 1)
-    photo = imresize(load(path),ratio=ratio)
-    photo = Gray.(photo)
+    
     array = convert(Array{Float64},photo) 
     return array
 end
 
-photo = read_photo("Nordea.jpg", 0.05)
+photo = read_photo("pics/helsinki.jpg", 0.15)
 
 
 ```
@@ -88,15 +101,15 @@ end
 function encode_photo(photo_array, write_path::String ="output.txt", encode_levels::String = " .:-=+*?#%@")
     photo_array = rescale_photo(photo_array, length(encode_levels))
 
-    hor_mat = abs.(shift_matrix(photo_array, 1, 0) - photo_array)
-    ver_mat = abs.(shift_matrix(photo_array, 0, 1) - photo_array)
+    #hor_mat = abs.(shift_matrix(photo_array, 1, 0) - photo_array)
+    #ver_mat = abs.(shift_matrix(photo_array, 0, 1) - photo_array)
 
-    mat_1 = map(x -> map_threshold(x, 0.90, "||"), ver_mat)
-    mat_2 = map(x -> map_threshold(x, 0.90, "--"), hor_mat)
+    #mat_1 = map(x -> map_threshold(x, 0.90, "||"), ver_mat)
+    #mat_2 = map(x -> map_threshold(x, 0.90, "--"), hor_mat)
 
-    #photo_array = map(x -> map_to_char(x, encode_levels), photo_array)
+    photo_array = map(x -> map_to_char(x, encode_levels), photo_array)
 
-    photo_array = coalesce.(mat_1, mat_2, photo_array)
+    #photo_array = coalesce.(mat_1, mat_2, photo_array)
     output_string = join(map(join, eachrow(photo_array)), '\n')
 
     open(write_path, "w") do file
@@ -107,11 +120,25 @@ end
 
 ```
 ```{julia}
-photo = read_photo("norhel.jpg", 0.25)
 encode_photo(photo, "output.txt")
 ```
 ```{julia}
 
 encode_photo(ver_mat, "vert.txt"," .:#@")
 encode_photo(hor_mat, "hor.txt"," .:#@")
+```
+
+
+```{julia}
+
+t = Template(;
+           user="bbtheo",
+           authors=["Theo Blauberg"],
+           plugins=[
+               License(name="MIT"),
+               Git(),
+               GitHubActions(),
+           ],
+       )
+
 ```
